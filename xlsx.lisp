@@ -16,7 +16,9 @@
 
 (defun get-unique-strings (zip)
   (loop for str in (xmls:xmlrep-find-child-tags :si (get-entry "xl/sharedStrings.xml" zip))
-     collect (xmls:xmlrep-string-child (xmls:xmlrep-find-child-tag :t str))))
+     collect (if (equal (second (xmls:xmlrep-find-child-tag :t str)) '(("space" "preserve")))
+		 " "
+		 (xmls:xmlrep-string-child (xmls:xmlrep-find-child-tag :t str)))))
 
 (defun get-number-formats (zip)
   (let ((format-codes (loop for fmt in (xmls:xmlrep-find-child-tags
@@ -99,13 +101,9 @@ A numeric id or name is required unless the file contains a single worksheet."
   "Creates an array from a list of cells of the form ((:A . 1) . 42)
 Empty columns or rows are ignored (column and row names are returned as additional values)." 
   (let* ((refs (mapcar #'first xlsx))
-	 (cols (sort (remove-duplicates (mapcar #'car refs)) #'string< :key #'symbol-name))
+	 (cols (sort (remove-duplicates (mapcar #'car refs)) #'string< :key (lambda (x) (format nil "~3@A" x))))
 	 (rows (sort (remove-duplicates (mapcar #'cdr refs)) #'<))
 	 (output (make-array (list (length rows) (length cols)) :initial-element nil)))
-    (loop for col in cols
-       for ncol from 0
-       do (loop for row in rows
-	     for nrow from 0
-	     for val = (cdr (assoc (cons col row) xlsx :test #'equal))
-	     when val do (setf (aref output nrow ncol) val)))
+    (loop for ((col . row) . val) in xlsx
+       do (setf (aref output (position row rows) (position col cols)) val))
     (values output cols rows)))
