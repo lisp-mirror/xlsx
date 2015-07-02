@@ -16,9 +16,9 @@
 
 (defun get-unique-strings (zip)
   (loop for str in (xmls:xmlrep-find-child-tags :si (get-entry "xl/sharedStrings.xml" zip))
-     collect (if (equal (second (xmls:xmlrep-find-child-tag :t str)) '(("space" "preserve")))
-		 " "
-		 (xmls:xmlrep-string-child (xmls:xmlrep-find-child-tag :t str)))))
+	for x = (xmls:xmlrep-find-child-tag :t str)
+	collect (cond ((equal (second x) '(("space" "preserve"))) " ")
+		      ((xmls:xmlrep-children x) (xmls:xmlrep-string-child x)))))
 
 (defun get-number-formats (zip)
   (let ((format-codes (loop for fmt in (xmls:xmlrep-find-child-tags
