@@ -99,11 +99,12 @@ A numeric id or name is required unless the file contains a single worksheet."
 
 (defun as-matrix (xlsx)
   "Creates an array from a list of cells of the form ((:A . 1) . 42)
-Empty columns or rows are ignored (column and row names are returned as additional values)." 
+Empty columns or rows are ignored (column and row names are returned as additional values)."
+  (declare (optimize speed))
   (let* ((refs (mapcar #'first xlsx))
 	 (cols (sort (remove-duplicates (mapcar #'car refs)) #'string< :key (lambda (x) (format nil "~3@A" x))))
 	 (rows (sort (remove-duplicates (mapcar #'cdr refs)) #'<))
 	 (output (make-array (list (length rows) (length cols)) :initial-element nil)))
     (loop for ((col . row) . val) in xlsx
-       do (setf (aref output (position row rows) (position col cols)) val))
+       do (setf (aref output (the fixnum (position row rows)) (the fixnum (position col cols))) val))
     (values output cols rows)))
