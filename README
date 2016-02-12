@@ -1,0 +1,33 @@
+;; example: creating a sqlite database from an excel sheet
+;; (the contents of the first row are used as column names)
+
+(asdf:load-system :sqlite)
+		   
+(asdf:load-system :xlsx)
+
+(defun fix-name (str)
+  (loop for char in '(#\- #\/ #\Space)
+	do (setf str (substitute #\_ char str)))
+  (setf str (remove #\.	str))
+  (if (digit-char-p (elt str 0))
+      (concatenate 'string "_" str)
+    str)))
+
+(defun xlsx-to-sqlite (file &optional (na "_NA_"))
+  (let ((xlsx (probe-file file)))
+    (when (null xlsx) (error "~A not found" file))
+    (let ((sqlite (merge-pathnames (make-pathname :type "sqlite") xlsx)))
+      (when (probe-file sqlite) (error "~A exists already" sqlite))
+      (let* ((data (xlsx:as-matrix (xlsx:read-sheet file 1) na))
+	     (fields (loop for col from 0 below (array-dimension data 1)
+			   collect (fix-name (aref data 0 col))))
+	     (create-sql (format nil "CREATE TABLE data(~{~A~^,~})" fields))
+	     (insert-sql (format nil "INSERT INTO data VALUES (~{~A~^,~})"
+				 (loop repeat (length fields) collect "?"))))
+	(sqlite:with-open-database (db sqlite)
+	  (sqlite:execute-to-list db create-sql)
+	  (loop for row from 1 below (array-dimension data 0)
+		do (apply #'sqlite:execute-non-query db insert-sql
+			  (loop for col from 0 below (length fields)
+				for item = (aref data row col)
+				collect (if (equal item na) nil item)))))))))
