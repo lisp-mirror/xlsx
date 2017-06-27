@@ -1,6 +1,6 @@
 (asdf:defsystem #:xlsx
   :name "XLSX"
-  :description "Basic reader for Excel files"
+  :description "Basic reader for Excel files."
   :author "Carlos Ungil <ungil@mac.com>"
   :license "MIT"
   :serial t

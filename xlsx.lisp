@@ -16,9 +16,8 @@
 
 (defun get-unique-strings (zip)
   (loop for str in (xmls:xmlrep-find-child-tags :si (get-entry "xl/sharedStrings.xml" zip))
-	for x = (xmls:xmlrep-find-child-tag :t str)
-	collect (cond ((equal (second x) '(("space" "preserve"))) " ")
-		      ((xmls:xmlrep-children x) (xmls:xmlrep-string-child x)))))
+     for x = (xmls:xmlrep-find-child-tag :t str)
+     collect (xmls:xmlrep-string-child x)))
 
 (defun get-number-formats (zip)
   (let ((format-codes (loop for fmt in (xmls:xmlrep-find-child-tags
@@ -89,7 +88,9 @@ A numeric id or name is required unless the file contains a single worksheet."
 					  (and (stringp fmt) (not (search "h" fmt)) (not (search "s" fmt))
 					       (search "d" fmt) (search "m" fmt) (search "y" fmt)))))
 		   when value
-		   collect (let ((value (xmls:xmlrep-string-child value)))
+		   collect (let ((value (ignore-errors (xmls:xmlrep-string-child value))))
+			     (when (null value) (warn "cell contents missing at ~A ~A [ ~A ~A ]"
+						      (car col-row) (cdr col-row) file entry-name))
 			     (cons col-row
 				   (cond ((equal type "e") (intern value "KEYWORD")) ;;ERROR
 					 ((equal type "str") value) ;; CALCULATED STRING
