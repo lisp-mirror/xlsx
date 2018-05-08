@@ -77,7 +77,7 @@ A numeric id or name is required unless the file contains a single worksheet."
 			      :sheetData (get-entry (format nil "xl/~A" entry-name) zip)))
 	 with unique-strings = (get-unique-strings zip)
 	 with number-formats = (get-number-formats zip)
-	 append (loop for c in (rest (rest row))
+	 append (loop for c in (xmls:xmlrep-children row)
 		   for col-row = (column-and-row (xmls:xmlrep-attrib-value "r" c))
 		   for value = (xmls:xmlrep-find-child-tag :v c nil)
 		   for type = (xmls:xmlrep-attrib-value "t" c nil)
